@@ -1,11 +1,13 @@
 ---
-title: 'Exercise report "Smartpill"'
-author: "Clémentine"
+title: 'Exercise report "Smartpill", course Projects in R, April 26'
+author: "Clémentine Tombez"
 format:
   html:
     code-fold: true
+    embed-resources: true
 editor: visual
 ---
+
 
 ```{r}
 #| include: false
