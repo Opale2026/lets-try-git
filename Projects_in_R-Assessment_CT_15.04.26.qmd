@@ -7,6 +7,15 @@ format:
 editor: visual
 ---
 
+```{r}
+#| include: false
+
+knitr::opts_chunk$set(
+  warning = FALSE,
+  message = FALSE
+)
+```
+
 ## Introduction
 
 This report explores the `smartpill` dataset from the `medicaldata` package. The dataset comes from a study that used a wireless motility capsule, called a SmartPill, to measure intestinal transit in critically ill trauma patients and healthy volunteers.
