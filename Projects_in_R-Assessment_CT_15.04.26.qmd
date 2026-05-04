@@ -1,0 +1,120 @@
+---
+title: 'Exercise report "Smartpill"'
+author: "Clémentine"
+format:
+  html:
+    code-fold: true
+editor: visual
+---
+
+## Introduction
+
+This report explores the `smartpill` dataset from the `medicaldata` package. The dataset comes from a study that used a wireless motility capsule, called a SmartPill, to measure intestinal transit in critically ill trauma patients and healthy volunteers.
+
+According to R documentation on this dataset, the study included 8 critically ill trauma patients and 87 healthy volunteers. The SmartPill measured transit through different parts of the gastrointestinal tract, including gastric emptying time, small bowel transit time, and colonic transit time.
+
+In this short report, I focus on intestinal transit time because delayed gut motility can be relevant in critically ill patients.
+
+The main question of this report is: Do transit times differ between trauma patients and healthy volunteers, and does this depend on the gut section?
+
+I will describe step by step how I proceeded.
+
+## Loading packages and data
+
+```{r}
+library(tidyverse)
+library(medicaldata)
+
+data("smartpill")
+```
+
+## Having a first look at the data
+
+The dataset contains 95 observations and 22 variables. I first used `glimpse()` to explore the variables of this dataset.
+
+```{r}
+glimpse(smartpill)
+```
+
+## Preparing the data for the graph
+
+The variable `Group` was coded as 0 and 1. I changed these values into clearer group names called "Trauma patients" and "Healthy volunteers".
+
+```{r}
+smartpill_clean <- smartpill %>%
+  mutate(
+    group = factor(
+      Group,
+      levels = c(0, 1),
+      labels = c("Trauma patients", "Healthy volunteers")
+    )
+  )
+```
+
+The dataset `smartpill` has three separate columns for transit time: one for gastric emptying, one for the small bowel, and one for the colon. For the graph, I created one column with the transit time and one column with the gut section.
+
+```{r}
+smartpill_long <- smartpill_clean %>%
+  select(group, GE.Time, SB.Time, C.Time) %>%
+  pivot_longer(
+    cols = c(GE.Time, SB.Time, C.Time),
+    names_to = "gut_section",
+    values_to = "transit_time"
+  ) %>%
+  mutate(
+    gut_section = case_when(
+      gut_section == "GE.Time" ~ "Gastric emptying",
+      gut_section == "SB.Time" ~ "Small bowel",
+      gut_section == "C.Time" ~ "Colon"
+    ),
+    gut_section = factor(
+      gut_section,
+      levels = c("Gastric emptying", "Small bowel", "Colon")
+    )
+  ) %>%
+  filter(!is.na(transit_time))
+```
+
+## Having a look at the main outcome
+
+I tried to calculate the median transit time for each group and gut section.
+
+```{r}
+smartpill_long %>%
+  group_by(group, gut_section) %>%
+  summarise(
+    n = n(),
+    median_transit_time = median(transit_time),
+    .groups = "drop"
+  )
+```
+
+## Creating a graph
+
+I created a graph to compare transit times between trauma patients and healthy volunteers. The boxplots show the distribution, and the points show the individual observations. I used boxplots to summarize the distributions and jittered points to show the individual observations.
+
+```{r}
+#| label: fig-smartpill-boxplot
+#| fig-cap: "Transit time by group and gut section."
+#| fig-width: 8
+#| fig-height: 5
+
+ggplot(smartpill_long, aes(x = group, y = transit_time, fill = group)) +
+  geom_boxplot(alpha = 0.6, outlier.shape = NA) +
+  geom_jitter(width = 0.15, alpha = 0.6, size = 1.5) +
+  facet_wrap(~ gut_section, scales = "free_y") +
+  labs(
+    title = "Transit time by group and gut section",
+    x = "Group",
+    y = "Transit time in hours"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "none",
+    axis.text.x = element_text(angle = 20, hjust = 1)
+  )
+```
+
+## Conclusion
+
+This graph suggests that transit time differed between gut sections. The colon generally had longer transit times than the stomach and small bowel. There also seem to be differences between trauma patients and healthy volunteers, but the trauma patient group was very small, so I would describe these results carefully and not make a strong conclusion. In the colon graph, only healthy volunteers are shown because there were no available non-missing colon transit times for trauma patients after removing missing values.
